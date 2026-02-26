@@ -25,10 +25,15 @@ jobs:
       - name: push image to docker hub
         run: sudo nerdctl push ${{ env.IMAGE_TAG }}
 
-      - name: deploy
+      - name: deploy new image
         run: | 
           kubectl --server=${{ env.KUBE_SERVER }} \
           --insecure-skip-tls-verify=true \
           --token=${{ secrets.KUBE_TOKEN }} \
           set image deployment/shopnow-user-service-deployment shopnow-user-service=${{ env.IMAGE_TAG }} \
           -n shopnow
+          
+      - name: clean up workspace
+        run: |
+          rm -rf ${{ github.workspace }}/*
+          nerdctl system prune -a -f
