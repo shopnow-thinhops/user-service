@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-image:
+  build-and-push-image:
     runs-on:
       - self-hosted
     steps:
@@ -21,4 +21,11 @@ jobs:
 
       - name: push image to docker hub
         run: sudo nerdctl push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
+
+  deploy:
+    runs-on: 
+      - self-hosted
+    steps:
+      - name: deploy new image
+        run: sudo kubectl set image deployment/shopnow-user-service-deployment shopnow-user-service=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }} -n shopnow
 
