@@ -36,4 +36,4 @@ jobs:
       - name: clean up workspace
         run: |
           rm -rf ${{ github.workspace }}/*
-          nerdctl system prune -a -f
+          sudo nerdctl system prune -a -f
