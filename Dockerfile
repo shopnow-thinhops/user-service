@@ -4,7 +4,7 @@ FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /app
 COPY . .
 
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application
 FROM eclipse-temurin:17-jre-alpine
