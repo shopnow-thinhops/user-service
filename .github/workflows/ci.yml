@@ -1,1 +1,24 @@
+name: build and deploy user service
+
+on:
+  push:
+    branches: 
+      - main
+
+jobs:
+  build-image:
+    runs-on:
+      - self-hosted
+    steps:
+      - name: clone code from repo to local
+        uses: actions/checkout@v4
+        
+      - name: build image
+        run: sudo nerdctl build -t ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }} .
+
+      - name: login to docker hub
+        run: sudo nerdctl login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: push image to docker hub
+        run: sudo nerdctl push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
 
