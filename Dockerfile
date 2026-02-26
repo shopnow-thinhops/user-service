@@ -1,9 +1,9 @@
 # Stage 1: Build the application
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /app
 COPY . .
-RUN chmod +x ./mvnw
+
 RUN ./mvnw clean package -DskipTests
 
 # Stage 2: Run the application
