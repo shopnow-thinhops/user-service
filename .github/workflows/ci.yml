@@ -21,10 +21,10 @@ jobs:
           SECRET=$(curl \
           --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN}}" \
           --request GET \
-          "https://vault.thinhopsops.win/v1/kv/data/shopnow/registry" | jq -r '.data.data')
+          "https://vault.thinhopsops.win/v1/kv2/data/shopnow/registry" | jq -r '.data.data')
           
-          VAULT_REGISTRY_USERNAME=$( echo $SECRET | jq -r '.USERNAME')
-          VAULT_REGISTRY_TOKEN=$( echo $SECRET | jq -r '.TOKEN')
+          VAULT_REGISTRY_USERNAME=$( echo $SECRET | jq -r '.REGISTRY_USERNAME')
+          VAULT_REGISTRY_TOKEN=$( echo $SECRET | jq -r '.REGISTRY_TOKEN')
 
           echo "::add-mask::$VAULT_REGISTRY_USERNAME"
           echo "::add-mask::$VAULT_REGISTRY_TOKEN"
