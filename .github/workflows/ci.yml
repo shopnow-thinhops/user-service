@@ -41,8 +41,8 @@ jobs:
       - name: login to docker hub
         run: sudo nerdctl login -u ${{ env.REGISTRY_USERNAME}} -p ${{ env.REGISTRY_TOKEN }}
 
-      #- name: push image to docker hub
-        #run: sudo nerdctl push ${{ env.IMAGE_TAG }}
+      - name: push image to docker hub
+        run: sudo nerdctl push ${{ env.IMAGE_TAG }}
 
       # - name: deploy new image
       #   run: | 
