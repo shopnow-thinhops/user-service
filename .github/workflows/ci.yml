@@ -13,27 +13,46 @@ jobs:
       IMAGE_TAG: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
       KUBE_SERVER:  "https://127.0.0.1:6443"
     steps:
-      - name: clone code from repo to local
-        uses: actions/checkout@v4
+      - name: install jq
+        run: sudo apt install jq -y
+    
+      - name: get the secret from vault
+        run: |
+          SECRET=$(curl \
+          --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN}}" \
+          --request GET \
+          "https://vault.thinhopsops.win/v1/kv/data/shopnow/registry" | jq -r '.data.data')
+          
+          VAULT_REGISTRY_USERNAME=$( echo $SECRET | jq -r '.USERNAME')
+          VAULT_REGISTRY_TOKEN=$( echo $SECRET | jq -r '.TOKEN')
+
+          echo "::add-mask::$VAULT_REGISTRY_USERNAME"
+          echo "::add-mask::$VAULT_REGISTRY_TOKEN"
+
+          echo "REGISTRY_USERNAME=$VAULT_REGISTRY_USERNAME" >> $GITHUB_ENV
+          echo "REGISTRY_TOKEN=$VAULT_REGISTRY_TOKEN" >> $GITHUB_ENV
+    
+    #  - name: clone code from repo to local
+    #    uses: actions/checkout@v4
         
-      - name: build image
-        run: sudo nerdctl build -t ${{ env.IMAGE_TAG }} .
+    #  - name: build image
+    #     run: sudo nerdctl build -t ${{ env.IMAGE_TAG }} .
 
       - name: login to docker hub
-        run: sudo nerdctl login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_TOKEN }}
+        run: sudo nerdctl login -u ${{ env.REGISTRY_USERNAME}} -p ${{ env.REGISTRY_TOKEN }}
 
-      - name: push image to docker hub
-        run: sudo nerdctl push ${{ env.IMAGE_TAG }}
+      #- name: push image to docker hub
+        #run: sudo nerdctl push ${{ env.IMAGE_TAG }}
 
-      - name: deploy new image
-        run: | 
-          kubectl --server=${{ env.KUBE_SERVER }} \
-          --insecure-skip-tls-verify=true \
-          --token=${{ secrets.KUBE_TOKEN }} \
-          set image deployment/shopnow-user-service-deployment shopnow-user-service=${{ env.IMAGE_TAG }} \
-          -n shopnow
+      # - name: deploy new image
+      #   run: | 
+      #     kubectl --server=${{ env.KUBE_SERVER }} \
+      #     --insecure-skip-tls-verify=true \
+      #     --token=${{ secrets.KUBE_TOKEN }} \
+      #     set image deployment/shopnow-user-service-deployment shopnow-user-service=${{ env.IMAGE_TAG }} \
+      #     -n shopnow
           
-      - name: clean up workspace
-        run: |
-          rm -rf ${{ github.workspace }}/*
-          sudo nerdctl system prune -a -f
+      # - name: clean up workspace
+      #   run: |
+      #     rm -rf ${{ github.workspace }}/*
+      #     sudo nerdctl system prune -a -f
