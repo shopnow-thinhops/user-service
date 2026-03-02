@@ -10,8 +10,6 @@ jobs:
   build-and-push-image:
     runs-on:
       - self-hosted
-    container:
-      image: maven:3.9.9-eclipse-temurin-17
     env:
       # IMAGE_TAG: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
       # KUBE_SERVER:  "https://127.0.0.1:6443"
