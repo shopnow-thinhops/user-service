@@ -22,12 +22,12 @@ jobs:
       - name: clone code from repo to local
         uses: actions/checkout@v4
         
-      - name: Cache Maven packages
-        uses: actions/cache@v4
+      - name: Set up JDK 17 & Maven
+        uses: actions/setup-java@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          java-version: '17'
+          distribution: 'temurin' 
+          cache: maven
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
@@ -38,11 +38,11 @@ jobs:
     
       - name: setup enviroment
         run: | 
-            echo "192.168.200.104 sonarqube.thinhopsops.win" | tee -a /etc/hosts
-            apt-get update -y && apt-get install -y wget unzip
-            wget --tries=3 https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
-            unzip sonar-scanner-cli-7.1.0.4889-linux-x64.zip
-            mv sonar-scanner-cli-7.1.0.4889-linux-x64 /opt/sonar-scanner
+            # echo "192.168.200.104 sonarqube.thinhopsops.win" | tee -a /etc/hosts
+            # apt-get update -y && apt-get install -y wget unzip
+            # wget --tries=3 https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
+            # unzip sonar-scanner-cli-7.1.0.4889-linux-x64.zip
+            # mv sonar-scanner-cli-7.1.0.4889-linux-x64 /opt/sonar-scanner
             echo "/opt/sonar-scanner/bin" >> $GITHUB_PATH
 
       - name: build and scan project
