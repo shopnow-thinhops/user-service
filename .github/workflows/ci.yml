@@ -10,6 +10,8 @@ jobs:
   build-and-push-image:
     runs-on:
       - self-hosted
+    container:
+      image: maven:3.9.9-eclipse-temurin-17
     env:
       # IMAGE_TAG: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
       # KUBE_SERVER:  "https://127.0.0.1:6443"
@@ -36,11 +38,11 @@ jobs:
     
       - name: setup enviroment
         run: | 
-            # echo "192.168.200.104 sonarqube.thinhopsops.win" | sudo tee -a /etc/hosts
-            # sudo apt-get update -y && sudo apt-get install -y wget unzip
-            # wget --tries=3 https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
-            # unzip sonar-scanner-cli-7.1.0.4889-linux-x64.zip
-            # sudo mv sonar-scanner-cli-7.1.0.4889-linux-x64 /opt/sonar-scanner
+            echo "192.168.200.104 sonarqube.thinhopsops.win" | tee -a /etc/hosts
+            apt-get update -y && apt-get install -y wget unzip
+            wget --tries=3 https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
+            unzip sonar-scanner-cli-7.1.0.4889-linux-x64.zip
+            mv sonar-scanner-cli-7.1.0.4889-linux-x64 /opt/sonar-scanner
             echo "/opt/sonar-scanner/bin" >> $GITHUB_PATH
 
       - name: build and scan project
