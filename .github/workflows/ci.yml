@@ -1,46 +1,83 @@
 name: build and deploy user service
 
 on:
-  workflow_dispatch:
-  #push:
-    #branches: 
-      #- main
+  #workflow_dispatch:
+  push:
+    branches: 
+      - main
 
 jobs:
   build-and-push-image:
     runs-on:
       - self-hosted
     env:
-      IMAGE_TAG: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
-      KUBE_SERVER:  "https://127.0.0.1:6443"
+      # IMAGE_TAG: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.PROJECT }}:user-service-${{ github.run_number }}
+      # KUBE_SERVER:  "https://127.0.0.1:6443"
+      SONAR_HOST_URL: "http://sonarqube.thinhopsops.win:9000"
+      SONAR_USER_HOME: ${{ github.workspace }}/.sonar
+      PROJECT_NAME: "shopnow"
     steps:
-      - name: install jq
-        run: sudo apt install jq -y
+      - name: clone code from repo to local
+        uses: actions/checkout@v4
+        
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SONAR_USER_HOME }}/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar 
     
-      - name: get the secret from vault
-        run: |
-          SECRET=$(curl \
-          --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN}}" \
-          --request GET \
-          "https://vault.thinhopsops.win/v1/kv2/data/shopnow/registry" | jq -r '.data.data')
+      - name: setup enviroment
+        run: | 
+            echo "192.168.200.104 sonarqube.thinhopsops.win" | sudo tee -a /etc/hosts
+            sudo apt-get update -y && sudo apt-get install -y wget unzip
+            wget --tries=3 https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.1.0.4889-linux-x64.zip
+            unzip sonar-scanner-cli-7.1.0.4889-linux-x64.zip
+            sudo mv sonar-scanner-cli-7.1.0.4889-linux-x64 /opt/sonar-scanner
+            echo "/opt/sonar-scanner/bin" >> $GITHUB_PATH
+
+      - name: build and scan project
+        continue-on-error: true
+        run: | 
+          mvn clean compile
+          sonar-scanner -Dsonar.java.binaries="./target/classes" -Dsonar.sources="./src/" \
+          -Dsonar.projectKey=${{ env.PROJECT_NAME }} \
+          -Dsonar.projectName=${{ env.PROJECT_NAME }} \
+          -Dsonar.projectVersion=${{ github.run_number }} \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+    
+      # - name: install jq
+      #   run: sudo apt install jq -y
+    
+      # - name: get the secret from vault
+      #   run: |
+      #     SECRET=$(curl \
+      #     --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN}}" \
+      #     --request GET \
+      #     "https://vault.thinhopsops.win/v1/kv2/data/shopnow/registry" | jq -r '.data.data')
           
-          VAULT_REGISTRY_USERNAME=$( echo $SECRET | jq -r '.REGISTRY_USERNAME')
-          VAULT_REGISTRY_TOKEN=$( echo $SECRET | jq -r '.REGISTRY_TOKEN')
+      #     VAULT_REGISTRY_USERNAME=$( echo $SECRET | jq -r '.REGISTRY_USERNAME')
+      #     VAULT_REGISTRY_TOKEN=$( echo $SECRET | jq -r '.REGISTRY_TOKEN')
 
-          echo "::add-mask::$VAULT_REGISTRY_USERNAME"
-          echo "::add-mask::$VAULT_REGISTRY_TOKEN"
+      #     echo "::add-mask::$VAULT_REGISTRY_USERNAME"
+      #     echo "::add-mask::$VAULT_REGISTRY_TOKEN"
 
-          echo "REGISTRY_USERNAME=$VAULT_REGISTRY_USERNAME" >> $GITHUB_ENV
-          echo "REGISTRY_TOKEN=$VAULT_REGISTRY_TOKEN" >> $GITHUB_ENV
+      #     echo "REGISTRY_USERNAME=$VAULT_REGISTRY_USERNAME" >> $GITHUB_ENV
+      #     echo "REGISTRY_TOKEN=$VAULT_REGISTRY_TOKEN" >> $GITHUB_ENV
     
-    #  - name: clone code from repo to local
-    #    uses: actions/checkout@v4
         
     #  - name: build image
     #     run: sudo nerdctl build -t ${{ env.IMAGE_TAG }} .
 
-      - name: login to docker hub
-        run: sudo nerdctl login -u ${{ env.REGISTRY_USERNAME}} -p ${{ env.REGISTRY_TOKEN }}
+      # - name: login to docker hub
+      #   run: sudo nerdctl login -u ${{ env.REGISTRY_USERNAME}} -p ${{ env.REGISTRY_TOKEN }}
 
       # - name: push image to docker hub
       #   run: sudo nerdctl push ${{ env.IMAGE_TAG }}
